@@ -42,6 +42,7 @@ impl View {
         }
     }
     fn resize(&mut self, to: Size) {
+        self.size = to;
         self.scroll_text_location_into_view();
         self.needs_redraw = true;
     }
