@@ -6,7 +6,6 @@ use std::{
     env,
     io::Error,
     panic::{set_hook, take_hook},
-    process::Command,
 };
 
 mod editorcommand;
