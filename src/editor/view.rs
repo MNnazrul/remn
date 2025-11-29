@@ -39,8 +39,10 @@ impl View {
         }
     }
     fn backspace(&mut self) {
-        self.move_left();
-        self.delete();
+        if self.text_location.line_index != 0 || self.text_location.grapheme_index != 0 {
+            self.move_text_location(&Direction::Left);
+            self.delete();
+        }
     }
     fn delete(&mut self) {
         self.buffer.delete(self.text_location);
@@ -74,7 +76,7 @@ impl View {
 
         let grapheme_delta = new_len.saturating_sub(old_len);
         if grapheme_delta > 0 {
-            self.move_right();
+            self.move_text_location(&Direction::Right);
         }
         self.needs_redraw = true;
     }
