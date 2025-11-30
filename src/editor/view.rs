@@ -37,7 +37,11 @@ impl View {
             EditorCommand::Delete => self.delete(),
             EditorCommand::Backspace => self.delete_backward(),
             EditorCommand::Enter => self.insert_newline(),
+            EditorCommand::Save => self.save(),
         }
+    }
+    fn save(&self) {
+        let _ = self.buffer.save();
     }
     fn insert_newline(&mut self) {
         self.buffer.insert_newline(self.text_location);
