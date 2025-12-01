@@ -9,17 +9,27 @@ use std::{
 };
 
 mod editorcommand;
+mod statusbar;
 mod terminal;
+use statusbar::StatusBar;
 mod view;
 use terminal::Terminal;
 use view::View;
 
 use crate::editor::editorcommand::EditorCommand;
 
-#[derive(Default)]
+#[derive(Default, Eq, PartialEq, Debug)]
+pub struct DocumentStatus {
+    total_lines: usize,
+    current_line_index: usize,
+    is_modified: bool,
+    file_name: Option<String>,
+}
+
 pub struct Editor {
     should_quit: bool,
     view: View,
+    status_bar: StatusBar,
 }
 
 impl Editor {
@@ -31,7 +41,7 @@ impl Editor {
         }));
         Terminal::initialize()?;
 
-        let mut view = View::default();
+        let mut view = View::new(2);
         let args: Vec<String> = env::args().collect();
         if let Some(file_name) = args.get(1) {
             view.load(file_name);
@@ -39,6 +49,7 @@ impl Editor {
         Ok(Self {
             should_quit: false,
             view,
+            status_bar: StatusBar::new(1),
         })
     }
     pub fn run(&mut self) {
@@ -56,6 +67,8 @@ impl Editor {
                     }
                 }
             }
+            let status = self.view.get_status();
+            self.status_bar.update_status(status);
         }
     }
 
@@ -72,6 +85,9 @@ impl Editor {
                     self.should_quit = true;
                 } else {
                     self.view.handle_command(command);
+                    if let EditorCommand::Resize(size) = command {
+                        self.status_bar.resize(size);
+                    }
                 }
             }
         } else {
@@ -85,6 +101,7 @@ impl Editor {
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
         self.view.render();
+        self.status_bar.render();
 
         let _ = Terminal::move_caret_to(self.view.caret_position());
         let _ = Terminal::show_caret();
