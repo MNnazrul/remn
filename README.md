@@ -18,7 +18,7 @@ A simple, terminal-based code editor written in Rust.
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/remn.git
+git clone https://github.com/mnnazrul/remn.git
 cd remn
 cargo build --release
 ```
@@ -72,6 +72,17 @@ remn/
 - [crossterm](https://crates.io/crates/crossterm) - Cross-platform terminal manipulation
 - [unicode-segmentation](https://crates.io/crates/unicode-segmentation) - Unicode text segmentation
 - [unicode-width](https://crates.io/crates/unicode-width) - Unicode character width
+
+## Roadmap
+
+Features currently under development:
+
+- [ ] Fancy Status Bar - Enhanced status bar with more information
+- [ ] Simple Message Bar - Display messages to users
+- [ ] Expiring Messages - Auto-dismiss notifications
+- [ ] Save as… - Save file with new name
+- [ ] Search - Find text within files
+- [ ] Syntax Highlighting - Language-specific color coding
 
 ## Development
 
