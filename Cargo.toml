@@ -2,6 +2,8 @@
 name = "remn"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+authors = ["mnnazrul"]
 
 [dependencies]
 crossterm = "0.29.0"
