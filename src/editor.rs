@@ -1,6 +1,7 @@
 use crossterm::event::{
+    read,
     Event::{self},
-    KeyEvent, KeyEventKind, read,
+    KeyEvent, KeyEventKind,
 };
 use std::{
     env,
@@ -8,7 +9,9 @@ use std::{
     panic::{set_hook, take_hook},
 };
 
+mod documentstatus;
 mod editorcommand;
+mod fileinfo;
 mod statusbar;
 mod terminal;
 use statusbar::StatusBar;
