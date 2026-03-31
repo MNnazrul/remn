@@ -41,11 +41,14 @@ impl View {
     fn save(&mut self) {
         let _ = self.buffer.save();
     }
+    pub fn save_as(&mut self, file_name: &str) {
+        self.buffer.save_as(file_name);
+    }
 
     // region: command handling
     pub fn handle_command(&mut self, command: EditorCommand) {
         match command {
-            EditorCommand::Resize(_) | EditorCommand::Quit => {}
+            EditorCommand::Resize(_) | EditorCommand::Quit | EditorCommand::SaveAs => {}
             EditorCommand::Move(direction) => self.move_text_location(direction),
             EditorCommand::Insert(character) => self.insert_char(character),
             EditorCommand::Delete => self.delete(),
@@ -240,7 +243,8 @@ impl View {
     // Ensures self.location.line_index points to a valid line index by snapping it to the bottom most line if appropriate.
     // Doesn't trigger scrolling.
     fn snap_to_valid_line(&mut self) {
-        self.text_location.line_index = min(self.text_location.line_index, self.buffer.height());
+        self.text_location.line_index =
+            min(self.text_location.line_index, self.buffer.height().saturating_sub(1));
     }
 }
 
