@@ -26,6 +26,7 @@ pub enum EditorCommand {
     Enter,
     Save,
     SaveAs,
+    Search,
 }
 #[allow(clippy::as_conversions)]
 impl TryFrom<Event> for EditorCommand {
@@ -38,6 +39,7 @@ impl TryFrom<Event> for EditorCommand {
                 (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
                 (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
                 (KeyCode::Char('d'), KeyModifiers::CONTROL) => Ok(Self::SaveAs),
+                (KeyCode::Char('f'), KeyModifiers::CONTROL) => Ok(Self::Search),
                 (KeyCode::Char(character), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                     Ok(Self::Insert(character))
                 }

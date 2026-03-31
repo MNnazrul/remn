@@ -2,19 +2,18 @@
 
 A lightweight, terminal-based text editor written in Rust with full Unicode support.
 
+![remn editor](assets/screenshot.png)
+
 ## Features
 
 - Keyboard-driven text editing with arrow key navigation
 - Full Unicode support (wide characters, combining marks, grapheme clusters)
+- Syntax highlighting (Rust, Python, JavaScript/TypeScript, C/C++, Go)
+- Search with live results and wrap-around
 - Status bar with file name, line count, position, and modification indicator
 - Message bar for user notifications
 - Page-based scrolling and Home/End navigation
-- File loading and saving
-
-## Prerequisites
-
-- Rust (Edition 2024)
-- Cargo
+- File loading, saving, and Save As
 
 ## Installation
 
@@ -45,6 +44,7 @@ cargo run -- path/to/file.txt
 |-----|--------|
 | `Ctrl+S` | Save file |
 | `Ctrl+D` | Save as (new filename) |
+| `Ctrl+F` | Search text |
 | `Ctrl+Q` | Quit editor |
 | `Arrow Keys` | Move cursor |
 | `Home` / `End` | Jump to start / end of line |
@@ -70,6 +70,7 @@ src/
     ├── view.rs                # Text view, cursor, scrolling
     └── view/
         ├── buffer.rs          # Text buffer (load, save, insert, delete)
+        ├── highlighter.rs     # Syntax highlighting engine
         ├── line.rs            # Line with grapheme fragment handling
         └── location.rs        # Cursor location (line, grapheme index)
 ```
@@ -79,13 +80,6 @@ src/
 - [crossterm](https://crates.io/crates/crossterm) - Cross-platform terminal manipulation
 - [unicode-segmentation](https://crates.io/crates/unicode-segmentation) - Unicode grapheme cluster segmentation
 - [unicode-width](https://crates.io/crates/unicode-width) - Unicode display width calculation
-
-## Roadmap
-
-- [x] Save as (save file with new name)
-- [ ] Search (find text within files)
-- [ ] Syntax highlighting
-- [ ] Expiring messages (auto-dismiss notifications)
 
 ## Development
 

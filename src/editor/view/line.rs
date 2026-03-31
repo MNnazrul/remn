@@ -154,6 +154,19 @@ impl Line {
             fragments: remainder,
         }
     }
+    pub fn search_forward(&self, query: &str, from_grapheme_index: usize) -> Option<usize> {
+        let full_str = self.to_string();
+        let mut byte_offset = 0;
+        for (gi, fragment) in self.fragments.iter().enumerate() {
+            if gi >= from_grapheme_index {
+                if full_str[byte_offset..].starts_with(query) {
+                    return Some(gi);
+                }
+            }
+            byte_offset += fragment.grapheme.len();
+        }
+        None
+    }
 }
 
 impl fmt::Display for Line {

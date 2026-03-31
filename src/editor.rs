@@ -7,7 +7,6 @@ use std::{
     env,
     io::Error,
     panic::{set_hook, take_hook},
-    thread::current,
 };
 
 mod documentstatus;
@@ -28,13 +27,13 @@ use self::{messagebar::MessageBar, terminal::Size};
 use crate::editor::editorcommand::EditorCommand;
 
 pub const NAME: &str = env!("CARGO_PKG_NAME");
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Default, PartialEq)]
 enum PromptMode {
     #[default]
     None,
     SaveAs(String),
+    Search(String),
 }
 
 #[derive(Default)]
@@ -110,8 +109,7 @@ impl Editor {
                     }
                 }
             }
-            let status = self.view.get_status();
-            self.status_bar.update_status(status);
+            self.refresh_status();
         }
     }
 
@@ -146,8 +144,28 @@ impl Editor {
                     self.message_bar
                         .update_message("Save as: ".to_string());
                 }
+                EditorCommand::Search => {
+                    self.prompt_mode = PromptMode::Search(String::new());
+                    self.message_bar
+                        .update_message("Search: ".to_string());
+                }
                 _ => self.view.handle_command(command),
             }
+        }
+    }
+
+    fn get_prompt_label(&self) -> &str {
+        match self.prompt_mode {
+            PromptMode::SaveAs(_) => "Save as: ",
+            PromptMode::Search(_) => "Search: ",
+            PromptMode::None => "",
+        }
+    }
+
+    fn get_prompt_input_mut(&mut self) -> Option<&mut String> {
+        match self.prompt_mode {
+            PromptMode::SaveAs(ref mut s) | PromptMode::Search(ref mut s) => Some(s),
+            PromptMode::None => None,
         }
     }
 
@@ -159,32 +177,56 @@ impl Editor {
                     self.message_bar.update_message(String::new());
                 }
                 KeyCode::Enter => {
-                    if let PromptMode::SaveAs(ref filename) = self.prompt_mode {
-                        if !filename.is_empty() {
-                            let filename = filename.clone();
-                            self.view.save_as(&filename);
-                            self.message_bar
-                                .update_message(format!("Saved as: {filename}"));
-                        }
-                    }
+                    self.execute_prompt();
                     self.prompt_mode = PromptMode::None;
                 }
                 KeyCode::Backspace => {
-                    if let PromptMode::SaveAs(ref mut input) = self.prompt_mode {
+                    if let Some(input) = self.get_prompt_input_mut() {
                         input.pop();
-                        self.message_bar
-                            .update_message(format!("Save as: {input}"));
                     }
+                    let label = self.get_prompt_label().to_string();
+                    let input = self.get_prompt_input_mut()
+                        .map_or(String::new(), |s| s.clone());
+                    self.message_bar.update_message(format!("{label}{input}"));
                 }
                 KeyCode::Char(c) => {
-                    if let PromptMode::SaveAs(ref mut input) = self.prompt_mode {
+                    if let Some(input) = self.get_prompt_input_mut() {
                         input.push(c);
-                        self.message_bar
-                            .update_message(format!("Save as: {input}"));
+                    }
+                    let label = self.get_prompt_label().to_string();
+                    let input = self.get_prompt_input_mut()
+                        .map_or(String::new(), |s| s.clone());
+                    self.message_bar.update_message(format!("{label}{input}"));
+                    // Live search as you type
+                    if matches!(self.prompt_mode, PromptMode::Search(_)) {
+                        self.execute_prompt();
                     }
                 }
                 _ => {}
             }
+        }
+    }
+
+    fn execute_prompt(&mut self) {
+        match self.prompt_mode {
+            PromptMode::SaveAs(ref filename) => {
+                if !filename.is_empty() {
+                    let filename = filename.clone();
+                    self.view.save_as(&filename);
+                    self.message_bar
+                        .update_message(format!("Saved as: {filename}"));
+                }
+            }
+            PromptMode::Search(ref query) => {
+                if !query.is_empty() {
+                    let query = query.clone();
+                    if !self.view.search(&query) {
+                        self.message_bar
+                            .update_message(format!("Search: {query} (not found)"));
+                    }
+                }
+            }
+            PromptMode::None => {}
         }
     }
 

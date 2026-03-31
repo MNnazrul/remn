@@ -11,8 +11,10 @@ const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 mod buffer;
+mod highlighter;
 mod line;
 use buffer::Buffer;
+use highlighter::{Highlighter, Language};
 
 #[derive(Copy, Clone, Default)]
 pub struct Location {
@@ -20,13 +22,26 @@ pub struct Location {
     pub line_index: usize,
 }
 
-#[derive(Default)]
 pub struct View {
     buffer: Buffer,
     needs_redraw: bool,
     size: Size,
     text_location: Location,
     scroll_offset: Position,
+    highlighter: Highlighter,
+}
+
+impl Default for View {
+    fn default() -> Self {
+        Self {
+            buffer: Buffer::default(),
+            needs_redraw: false,
+            size: Size::default(),
+            text_location: Location::default(),
+            scroll_offset: Position::default(),
+            highlighter: Highlighter::new(Language::Plain),
+        }
+    }
 }
 
 impl View {
@@ -41,14 +56,29 @@ impl View {
     fn save(&mut self) {
         let _ = self.buffer.save();
     }
+    pub fn search(&mut self, query: &str) -> bool {
+        let from = Location {
+            line_index: self.text_location.line_index,
+            grapheme_index: self.text_location.grapheme_index.saturating_add(1),
+        };
+        if let Some(location) = self.buffer.search_forward(query, from) {
+            self.text_location = location;
+            self.scroll_text_location_into_view();
+            self.mark_redraw(true);
+            return true;
+        }
+        false
+    }
     pub fn save_as(&mut self, file_name: &str) {
         self.buffer.save_as(file_name);
+        self.update_highlighter();
+        self.mark_redraw(true);
     }
 
     // region: command handling
     pub fn handle_command(&mut self, command: EditorCommand) {
         match command {
-            EditorCommand::Resize(_) | EditorCommand::Quit | EditorCommand::SaveAs => {}
+            EditorCommand::Resize(_) | EditorCommand::Quit | EditorCommand::SaveAs | EditorCommand::Search => {}
             EditorCommand::Move(direction) => self.move_text_location(direction),
             EditorCommand::Insert(character) => self.insert_char(character),
             EditorCommand::Delete => self.delete(),
@@ -76,8 +106,20 @@ impl View {
     pub fn load(&mut self, file_name: &str) {
         if let Ok(buffer) = Buffer::load(file_name) {
             self.buffer = buffer;
+            self.update_highlighter();
             self.mark_redraw(true);
         }
+    }
+    fn update_highlighter(&mut self) {
+        let lang = self
+            .buffer
+            .file_info
+            .path
+            .as_ref()
+            .and_then(|p| p.extension())
+            .and_then(|e| e.to_str())
+            .map_or(Language::Plain, Language::from_extension);
+        self.highlighter = Highlighter::new(lang);
     }
     fn insert_char(&mut self, character: char) {
         let old_len = self
@@ -276,7 +318,9 @@ impl UIComponent for View {
             if let Some(line) = self.buffer.lines.get(line_idx) {
                 let left = self.scroll_offset.col;
                 let right = self.scroll_offset.col.saturating_add(width);
-                Self::render_line(current_row, &line.get_visible_graphemes(left..right))?;
+                let visible = line.get_visible_graphemes(left..right);
+                let highlighted = self.highlighter.highlight_line(&visible);
+                Self::render_line(current_row, &highlighted)?;
             } else if current_row == top_third && self.buffer.is_empty() {
                 Self::render_line(current_row, &Self::build_welcome_message(width))?;
             } else {
