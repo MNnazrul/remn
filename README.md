@@ -2,7 +2,7 @@
 
 A lightweight, terminal-based text editor written in Rust with full Unicode support.
 
-![remn editor](assets/screenshot.png)
+![remn editor](assets/Screenshot.png)
 
 ## Features
 
