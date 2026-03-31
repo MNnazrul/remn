@@ -1,7 +1,7 @@
 use crossterm::event::{
     read,
     Event::{self},
-    KeyEvent, KeyEventKind,
+    KeyCode, KeyEvent, KeyEventKind,
 };
 use std::{
     env,
@@ -30,6 +30,13 @@ use crate::editor::editorcommand::EditorCommand;
 pub const NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Default, PartialEq)]
+enum PromptMode {
+    #[default]
+    None,
+    SaveAs(String),
+}
+
 #[derive(Default)]
 pub struct Editor {
     should_quit: bool,
@@ -38,6 +45,7 @@ pub struct Editor {
     message_bar: MessageBar,
     terminal_size: Size,
     title: String,
+    prompt_mode: PromptMode,
 }
 
 impl Editor {
@@ -114,20 +122,68 @@ impl Editor {
             _ => false,
         };
 
-        if should_process {
-            if let Ok(command) = EditorCommand::try_from(event) {
-                if matches!(command, EditorCommand::Quit) {
-                    self.should_quit = true;
-                } else if let EditorCommand::Resize(size) = command {
-                    self.resize(size);
-                } else {
-                    self.view.handle_command(command);
-                }
-            }
-        } else {
+        if !should_process {
             #[cfg(debug_assertions)]
             {
                 panic!("Received and discarded unsupported or non-press event.")
+            }
+            #[cfg(not(debug_assertions))]
+            return;
+        }
+
+        // Handle prompt mode input
+        if self.prompt_mode != PromptMode::None {
+            self.handle_prompt_event(event);
+            return;
+        }
+
+        if let Ok(command) = EditorCommand::try_from(event) {
+            match command {
+                EditorCommand::Quit => self.should_quit = true,
+                EditorCommand::Resize(size) => self.resize(size),
+                EditorCommand::SaveAs => {
+                    self.prompt_mode = PromptMode::SaveAs(String::new());
+                    self.message_bar
+                        .update_message("Save as: ".to_string());
+                }
+                _ => self.view.handle_command(command),
+            }
+        }
+    }
+
+    fn handle_prompt_event(&mut self, event: Event) {
+        if let Event::Key(KeyEvent { code, .. }) = event {
+            match code {
+                KeyCode::Esc => {
+                    self.prompt_mode = PromptMode::None;
+                    self.message_bar.update_message(String::new());
+                }
+                KeyCode::Enter => {
+                    if let PromptMode::SaveAs(ref filename) = self.prompt_mode {
+                        if !filename.is_empty() {
+                            let filename = filename.clone();
+                            self.view.save_as(&filename);
+                            self.message_bar
+                                .update_message(format!("Saved as: {filename}"));
+                        }
+                    }
+                    self.prompt_mode = PromptMode::None;
+                }
+                KeyCode::Backspace => {
+                    if let PromptMode::SaveAs(ref mut input) = self.prompt_mode {
+                        input.pop();
+                        self.message_bar
+                            .update_message(format!("Save as: {input}"));
+                    }
+                }
+                KeyCode::Char(c) => {
+                    if let PromptMode::SaveAs(ref mut input) = self.prompt_mode {
+                        input.push(c);
+                        self.message_bar
+                            .update_message(format!("Save as: {input}"));
+                    }
+                }
+                _ => {}
             }
         }
     }

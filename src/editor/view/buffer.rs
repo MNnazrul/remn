@@ -37,6 +37,10 @@ impl Buffer {
         }
         Ok(())
     }
+    pub fn save_as(&mut self, file_name: &str) {
+        self.file_info = FileInfo::from(file_name);
+        let _ = self.save();
+    }
     pub fn is_empty(&self) -> bool {
         self.lines.is_empty()
     }

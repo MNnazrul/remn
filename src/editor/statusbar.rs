@@ -16,6 +16,7 @@ impl StatusBar {
     pub fn update_status(&mut self, new_status: DocumentStatus) {
         if new_status != self.current_status {
             self.current_status = new_status;
+            self.mark_redraw(true);
         }
     }
 }

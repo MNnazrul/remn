@@ -1,19 +1,20 @@
 # remn
 
-A simple, terminal-based code editor written in Rust.
+A lightweight, terminal-based text editor written in Rust with full Unicode support.
 
 ## Features
 
-- 📝 Simple and clean text editing interface
-- ⌨️ Keyboard-driven navigation and editing
-- 📄 File loading and editing support
-- 🎯 Status bar with file information
-- 🚀 Fast and lightweight
+- Keyboard-driven text editing with arrow key navigation
+- Full Unicode support (wide characters, combining marks, grapheme clusters)
+- Status bar with file name, line count, position, and modification indicator
+- Message bar for user notifications
+- Page-based scrolling and Home/End navigation
+- File loading and saving
 
 ## Prerequisites
 
-- Rust 1.70+ (Rust Edition 2024)
-- Cargo (comes with Rust)
+- Rust (Edition 2024)
+- Cargo
 
 ## Installation
 
@@ -23,84 +24,77 @@ cd remn
 cargo build --release
 ```
 
-The binary will be available at `target/release/remn`
+The binary will be at `target/release/remn`.
 
 ## Usage
 
-### Open editor without a file:
 ```bash
+# Open editor
 cargo run
-```
 
-### Open a specific file:
-```bash
+# Open a file
 cargo run -- path/to/file.txt
-```
 
-### Run the compiled binary:
-```bash
+# Or use the compiled binary
 ./target/release/remn [filename]
 ```
 
-## Keyboard Controls
+## Keyboard Shortcuts
 
-- **Ctrl+Q** - Quit editor
-- **Arrow Keys** - Navigate through text
-- Regular typing for text input
+| Key | Action |
+|-----|--------|
+| `Ctrl+S` | Save file |
+| `Ctrl+D` | Save as (new filename) |
+| `Ctrl+Q` | Quit editor |
+| `Arrow Keys` | Move cursor |
+| `Home` / `End` | Jump to start / end of line |
+| `PageUp` / `PageDown` | Scroll by page |
+| `Backspace` / `Delete` | Delete characters |
+| `Enter` | Insert new line |
+| `Tab` | Insert tab |
 
 ## Project Structure
 
 ```
-remn/
-├── src/
-│   ├── main.rs              # Entry point
-│   ├── editor.rs            # Core editor logic
-│   └── editor/
-│       ├── editorcommand.rs # Command handling
-│       ├── statusbar.rs     # Status bar display
-│       ├── terminal.rs      # Terminal interface
-│       └── view/            # Text view components
-│           ├── buffer.rs    # Text buffer management
-│           ├── line.rs      # Line handling
-│           ├── location.rs  # Cursor positioning
-│           └── view.rs      # View rendering
-└── Cargo.toml
+src/
+├── main.rs                    # Entry point
+├── editor.rs                  # Main editor loop and event handling
+└── editor/
+    ├── editorcommand.rs       # Key event to command mapping
+    ├── documentstatus.rs      # Document metadata (name, line count, position)
+    ├── fileinfo.rs            # File path management
+    ├── statusbar.rs           # Status bar rendering
+    ├── messagebar.rs          # Message bar rendering
+    ├── terminal.rs            # Terminal abstraction (crossterm)
+    ├── uicomponent.rs         # UIComponent trait for rendering
+    ├── view.rs                # Text view, cursor, scrolling
+    └── view/
+        ├── buffer.rs          # Text buffer (load, save, insert, delete)
+        ├── line.rs            # Line with grapheme fragment handling
+        └── location.rs        # Cursor location (line, grapheme index)
 ```
 
 ## Dependencies
 
 - [crossterm](https://crates.io/crates/crossterm) - Cross-platform terminal manipulation
-- [unicode-segmentation](https://crates.io/crates/unicode-segmentation) - Unicode text segmentation
-- [unicode-width](https://crates.io/crates/unicode-width) - Unicode character width
+- [unicode-segmentation](https://crates.io/crates/unicode-segmentation) - Unicode grapheme cluster segmentation
+- [unicode-width](https://crates.io/crates/unicode-width) - Unicode display width calculation
 
 ## Roadmap
 
-Features currently under development:
-
-- [ ] Fancy Status Bar - Enhanced status bar with more information
-- [ ] Simple Message Bar - Display messages to users
-- [ ] Expiring Messages - Auto-dismiss notifications
-- [ ] Save as… - Save file with new name
-- [ ] Search - Find text within files
-- [ ] Syntax Highlighting - Language-specific color coding
+- [x] Save as (save file with new name)
+- [ ] Search (find text within files)
+- [ ] Syntax highlighting
+- [ ] Expiring messages (auto-dismiss notifications)
 
 ## Development
 
 ```bash
-# Run in development mode
-cargo run
-
-# Run tests
-cargo test
-
-# Check code
-cargo clippy
+cargo run          # Run in dev mode
+cargo test         # Run tests
+cargo clippy       # Lint
 ```
 
 ## License
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
