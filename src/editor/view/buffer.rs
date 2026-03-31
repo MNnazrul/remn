@@ -75,6 +75,49 @@ impl Buffer {
             }
         }
     }
+    pub fn search_forward(&self, query: &str, from: Location) -> Option<Location> {
+        if query.is_empty() {
+            return None;
+        }
+        // Search from current position on current line
+        if let Some(line) = self.lines.get(from.line_index) {
+            if let Some(gi) = line.search_forward(query, from.grapheme_index) {
+                return Some(Location {
+                    line_index: from.line_index,
+                    grapheme_index: gi,
+                });
+            }
+        }
+        // Search subsequent lines
+        for li in (from.line_index + 1)..self.height() {
+            if let Some(line) = self.lines.get(li) {
+                if let Some(gi) = line.search_forward(query, 0) {
+                    return Some(Location {
+                        line_index: li,
+                        grapheme_index: gi,
+                    });
+                }
+            }
+        }
+        // Wrap around from the top
+        for li in 0..=from.line_index {
+            let start_gi = if li == from.line_index {
+                from.grapheme_index
+            } else {
+                0
+            };
+            if let Some(line) = self.lines.get(li) {
+                if let Some(gi) = line.search_forward(query, start_gi) {
+                    return Some(Location {
+                        line_index: li,
+                        grapheme_index: gi,
+                    });
+                }
+            }
+        }
+        None
+    }
+
     pub fn insert_newline(&mut self, at: Location) {
         if at.line_index == self.height() {
             self.lines.push(Line::default());
