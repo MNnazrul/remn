@@ -10,7 +10,7 @@ use super::{
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-mod buffer;
+pub mod buffer;
 mod highlighter;
 mod line;
 use buffer::Buffer;

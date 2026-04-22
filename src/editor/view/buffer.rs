@@ -3,6 +3,7 @@ use std::io::Error;
 use std::io::Write;
 
 use crate::editor::fileinfo::FileInfo;
+use crate::editor::command::{CommandWrapper, EditorCommandEnum, InsertCharCommand, DeleteCharCommand, InsertNewlineCommand, DeleteNewlineCommand};
 
 use super::line::Line;
 use super::Location;
@@ -47,32 +48,62 @@ impl Buffer {
     pub fn height(&self) -> usize {
         self.lines.len()
     }
-    pub fn insert_char(&mut self, character: char, at: Location) {
+    pub fn insert_char(&mut self, character: char, at: Location) -> Option<CommandWrapper> {
         if at.line_index > self.height() {
-            return;
+            return None;
         }
-        if at.line_index == self.height() {
-            self.lines.push(Line::from(&character.to_string()));
-            self.dirty = true;
+        let command = if at.line_index == self.height() {
+            EditorCommandEnum::InsertChar(InsertCharCommand {
+                character,
+                location: at,
+            })
         } else if let Some(line) = self.lines.get_mut(at.line_index) {
             line.insert_char(character, at.grapheme_index);
-            self.dirty = true;
-        }
+            EditorCommandEnum::InsertChar(InsertCharCommand {
+                character,
+                location: at,
+            })
+        } else {
+            return None;
+        };
+        
+        self.dirty = true;
+        Some(CommandWrapper::new(command))
     }
-    pub fn delete(&mut self, at: Location) {
+    pub fn delete(&mut self, at: Location) -> Option<CommandWrapper> {
         if let Some(line) = self.lines.get(at.line_index) {
+            // Check if we're deleting a newline (merging with next line)
             if at.grapheme_index >= line.grapheme_count()
                 && self.height() > at.line_index.saturating_add(1)
             {
                 let next_line = self.lines.remove(at.line_index.saturating_add(1));
+                let merged_content = next_line.to_string();
                 #[allow(clippy::indexing_slicing)]
                 self.lines[at.line_index].append(&next_line);
                 self.dirty = true;
+                Some(CommandWrapper::new(EditorCommandEnum::DeleteNewline(DeleteNewlineCommand {
+                    location: at,
+                    merged_content,
+                })))
             } else if at.grapheme_index < line.grapheme_count() {
+                // Regular character deletion
+                let deleted_char = line
+                    .get_visible_graphemes(at.grapheme_index..at.grapheme_index.saturating_add(1))
+                    .chars()
+                    .next()
+                    .unwrap_or('\0');
                 #[allow(clippy::indexing_slicing)]
                 self.lines[at.line_index].delete(at.grapheme_index);
                 self.dirty = true;
+                Some(CommandWrapper::new(EditorCommandEnum::DeleteChar(DeleteCharCommand {
+                    location: at,
+                    deleted_character: deleted_char,
+                })))
+            } else {
+                None
             }
+        } else {
+            None
         }
     }
     pub fn search_forward(&self, query: &str, from: Location) -> Option<Location> {
@@ -118,14 +149,22 @@ impl Buffer {
         None
     }
 
-    pub fn insert_newline(&mut self, at: Location) {
+    pub fn insert_newline(&mut self, at: Location) -> Option<CommandWrapper> {
         if at.line_index == self.height() {
             self.lines.push(Line::default());
             self.dirty = true;
+            Some(CommandWrapper::new(EditorCommandEnum::InsertNewline(InsertNewlineCommand {
+                location: at,
+            })))
         } else if let Some(line) = self.lines.get_mut(at.line_index) {
             let new = line.split(at.grapheme_index);
             self.lines.insert(at.line_index.saturating_add(1), new);
             self.dirty = true;
+            Some(CommandWrapper::new(EditorCommandEnum::InsertNewline(InsertNewlineCommand {
+                location: at,
+            })))
+        } else {
+            None
         }
     }
 }

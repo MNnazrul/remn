@@ -7,7 +7,10 @@ use std::{
     env,
     io::Error,
     panic::{set_hook, take_hook},
+    collections::VecDeque,
 };
+mod command;
+use crate::editor::command::{CommandWrapper, EditorCommandEnum, InsertCharCommand, DeleteCharCommand, InsertNewlineCommand, DeleteNewlineCommand};
 
 mod documentstatus;
 mod editorcommand;
@@ -45,6 +48,8 @@ pub struct Editor {
     terminal_size: Size,
     title: String,
     prompt_mode: PromptMode,
+    undo_stack: VecDeque<CommandWrapper>,
+    redo_stack: VecDeque<CommandWrapper>,
 }
 
 impl Editor {
